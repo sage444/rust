@@ -1,14 +1,14 @@
 //! Presence.
 
-use super::pubsub::inject_subscribe_to;
 use super::util::{build_uri, handle_json_response, json_as_array, json_as_object};
 use super::{error, Hyper};
 use crate::core::data::{presence, request, response};
 use crate::core::json;
 use crate::core::TransportService;
+use crate::encode_json;
 use async_trait::async_trait;
 use hyper::{Body, Response};
-use pubnub_util::uritemplate::{IfEmpty, UriTemplate};
+use pubnub_util::encoded_channels_list::EncodedChannelsList;
 use std::collections::HashMap;
 
 async fn handle_presence_response(
@@ -17,7 +17,7 @@ async fn handle_presence_response(
     let presence_data = handle_json_response(response).await?;
 
     if presence_data["error"] == true {
-        let error_message = presence_data["message"].to_string();
+        let error_message: String = format!("{}", presence_data["message"]);
         return Err(error::Error::Server(error_message));
     }
 
@@ -134,15 +134,19 @@ impl TransportService<request::SetState> for Hyper {
             state,
         } = request;
 
+        let channels = EncodedChannelsList::from(channels);
+        let channel_groups = EncodedChannelsList::from(channel_groups);
+        encode_json!(state => state);
+
         // Prepare the URL.
-        let path_and_query =
-            UriTemplate::new("/v2/presence/sub-key/{sub_key}/channel/{channel}/uuid/{uuid}/data{?channel-group,state}")
-                .set_scalar("sub_key", self.subscribe_key.clone())
-                .set_list_with_if_empty("channel", channels, IfEmpty::Comma)
-                .set_list_with_if_empty("channel-group", channel_groups, IfEmpty::Skip)
-                .set_scalar("uuid", uuid)
-                .set_scalar("state", json::stringify(state))
-                .build();
+        let path_and_query = format!(
+            "/v2/presence/sub-key/{sub_key}/channel/{channel}/uuid/{uuid}/data?channel-group={channel_group}&state={state}",
+            sub_key = self.subscribe_key,
+            channel = channels,
+            channel_group = channel_groups,
+            uuid = uuid,
+            state = state,
+        );
         let url = build_uri(&self, &path_and_query)?;
 
         // Send network request.
@@ -165,15 +169,17 @@ impl TransportService<request::GetState> for Hyper {
             uuid,
         } = request;
 
+        let channels = EncodedChannelsList::from(channels);
+        let channel_groups = EncodedChannelsList::from(channel_groups);
+
         // Prepare the URL.
-        let path_and_query = UriTemplate::new(
-            "/v2/presence/sub-key/{sub_key}/channel/{channel}/uuid/{uuid}{?channel-group}",
-        )
-        .set_scalar("sub_key", self.subscribe_key.clone())
-        .set_list_with_if_empty("channel", channels, IfEmpty::Comma)
-        .set_list_with_if_empty("channel-group", channel_groups, IfEmpty::Skip)
-        .set_scalar("uuid", uuid)
-        .build();
+        let path_and_query = format!(
+            "/v2/presence/sub-key/{sub_key}/channel/{channel}/uuid/{uuid}?channel-group={channel_group}",
+            sub_key = self.subscribe_key,
+            channel = channels,
+            channel_group = channel_groups,
+            uuid = uuid,
+        );
         let url = build_uri(&self, &path_and_query)?;
 
         // Send network request.
@@ -200,14 +206,16 @@ impl TransportService<request::HereNow<presence::respond_with::OccupancyOnly>> f
             ..
         } = request;
 
+        let channels = EncodedChannelsList::from(channels);
+        let channel_groups = EncodedChannelsList::from(channel_groups);
+
         // Prepare the URL.
-        let path_and_query = UriTemplate::new(
-            "/v2/presence/sub-key/{sub_key}/channel/{channel}?disable_uuids=1&state=0{&channel-group}",
-        )
-        .set_scalar("sub_key", self.subscribe_key.clone())
-        .set_list_with_if_empty("channel", channels, IfEmpty::Comma)
-        .set_list_with_if_empty("channel-group", channel_groups, IfEmpty::Skip)
-        .build();
+        let path_and_query = format!(
+            "/v2/presence/sub-key/{sub_key}/channel/{channel}?channel-group={channel_group}&disable_uuids=1&state=0",
+            sub_key = self.subscribe_key,
+            channel = channels,
+            channel_group = channel_groups,
+        );
         let url = build_uri(&self, &path_and_query)?;
 
         // Send network request.
@@ -236,14 +244,16 @@ impl TransportService<request::HereNow<presence::respond_with::OccupancyAndUUIDs
             ..
         } = request;
 
+        let channels = EncodedChannelsList::from(channels);
+        let channel_groups = EncodedChannelsList::from(channel_groups);
+
         // Prepare the URL.
-        let path_and_query = UriTemplate::new(
-            "/v2/presence/sub-key/{sub_key}/channel/{channel}?disable_uuids=0&state=0{&channel-group}",
-        )
-        .set_scalar("sub_key", self.subscribe_key.clone())
-        .set_list_with_if_empty("channel", channels, IfEmpty::Comma)
-        .set_list_with_if_empty("channel-group", channel_groups, IfEmpty::Skip)
-        .build();
+        let path_and_query = format!(
+            "/v2/presence/sub-key/{sub_key}/channel/{channel}?channel-group={channel_group}&disable_uuids=0&state=0",
+            sub_key = self.subscribe_key,
+            channel = channels,
+            channel_group = channel_groups,
+        );
         let url = build_uri(&self, &path_and_query)?;
 
         // Send network request.
@@ -273,14 +283,16 @@ impl TransportService<request::HereNow<presence::respond_with::Full>> for Hyper 
             ..
         } = request;
 
+        let channels = EncodedChannelsList::from(channels);
+        let channel_groups = EncodedChannelsList::from(channel_groups);
+
         // Prepare the URL.
-        let path_and_query = UriTemplate::new(
-            "/v2/presence/sub-key/{sub_key}/channel/{channel}?disable_uuids=0&state=1{&channel-group}",
-        )
-        .set_scalar("sub_key", self.subscribe_key.clone())
-        .set_list_with_if_empty("channel", channels, IfEmpty::Comma)
-        .set_list_with_if_empty("channel-group", channel_groups, IfEmpty::Skip)
-        .build();
+        let path_and_query = format!(
+            "/v2/presence/sub-key/{sub_key}/channel/{channel}?channel-group={channel_group}&disable_uuids=0&state=1",
+            sub_key = self.subscribe_key,
+            channel = channels,
+            channel_group = channel_groups,
+        );
         let url = build_uri(&self, &path_and_query)?;
 
         // Send network request.
@@ -306,10 +318,10 @@ impl TransportService<request::GlobalHereNow<presence::respond_with::OccupancyOn
         _request: request::GlobalHereNow<presence::respond_with::OccupancyOnly>,
     ) -> Result<Self::Response, Self::Error> {
         // Prepare the URL.
-        let path_and_query =
-            UriTemplate::new("/v2/presence/sub-key/{sub_key}?disable_uuids=1&state=0")
-                .set_scalar("sub_key", self.subscribe_key.clone())
-                .build();
+        let path_and_query = format!(
+            "/v2/presence/sub-key/{sub_key}?disable_uuids=1&state=0",
+            sub_key = self.subscribe_key,
+        );
         let url = build_uri(&self, &path_and_query)?;
 
         // Send network request.
@@ -336,10 +348,10 @@ impl TransportService<request::GlobalHereNow<presence::respond_with::OccupancyAn
         _request: request::GlobalHereNow<presence::respond_with::OccupancyAndUUIDs>,
     ) -> Result<Self::Response, Self::Error> {
         // Prepare the URL.
-        let path_and_query =
-            UriTemplate::new("/v2/presence/sub-key/{sub_key}?disable_uuids=0&state=0")
-                .set_scalar("sub_key", self.subscribe_key.clone())
-                .build();
+        let path_and_query = format!(
+            "/v2/presence/sub-key/{sub_key}?disable_uuids=0&state=0",
+            sub_key = self.subscribe_key,
+        );
         let url = build_uri(&self, &path_and_query)?;
 
         // Send network request.
@@ -368,10 +380,10 @@ impl TransportService<request::GlobalHereNow<presence::respond_with::Full>> for 
         _request: request::GlobalHereNow<presence::respond_with::Full>,
     ) -> Result<Self::Response, Self::Error> {
         // Prepare the URL.
-        let path_and_query =
-            UriTemplate::new("/v2/presence/sub-key/{sub_key}?disable_uuids=0&state=1")
-                .set_scalar("sub_key", self.subscribe_key.clone())
-                .build();
+        let path_and_query = format!(
+            "/v2/presence/sub-key/{sub_key}?disable_uuids=0&state=1",
+            sub_key = self.subscribe_key,
+        );
         let url = build_uri(&self, &path_and_query)?;
 
         // Send network request.
@@ -394,10 +406,11 @@ impl TransportService<request::WhereNow> for Hyper {
         let request::WhereNow { uuid } = request;
 
         // Prepare the URL.
-        let path_and_query = UriTemplate::new("/v2/presence/sub-key/{sub_key}/uuid/{uuid}")
-            .set_scalar("sub_key", self.subscribe_key.clone())
-            .set_scalar("uuid", uuid)
-            .build();
+        let path_and_query = format!(
+            "/v2/presence/sub-key/{sub_key}/uuid/{uuid}",
+            sub_key = self.subscribe_key,
+            uuid = uuid,
+        );
         let url = build_uri(&self, &path_and_query)?;
 
         // Send network request.
@@ -416,37 +429,5 @@ impl TransportService<request::WhereNow> for Hyper {
             results.ok_or_else(err_fn)?
         };
         Ok(channles)
-    }
-}
-
-#[async_trait]
-impl TransportService<request::Heartbeat> for Hyper {
-    type Response = response::Heartbeat;
-    type Error = error::Error;
-
-    async fn call(&self, request: request::Heartbeat) -> Result<Self::Response, Self::Error> {
-        let request::Heartbeat {
-            heartbeat,
-            to,
-            state,
-            uuid,
-        } = request;
-
-        // Prepare the URL.
-        let path_and_query =
-            UriTemplate::new("/v2/presence/sub-key/{sub_key}/channel/{channel}/heartbeat{?channel-group,uuid,state,heartbeat}")
-                .set_scalar("sub_key", self.subscribe_key.clone())
-                .tap(|val| inject_subscribe_to(val, &to))
-                .set_scalar("uuid", uuid)
-                .set_optional_scalar("heartbeat", heartbeat.map(|e|e.to_string()))
-                .set_scalar("state", json::stringify(state))
-                .build();
-        let url = build_uri(&self, &path_and_query)?;
-
-        // Send network request.
-        let response = self.http_client.get(url).await?;
-        let _ = handle_presence_response(response).await?;
-
-        Ok(())
     }
 }

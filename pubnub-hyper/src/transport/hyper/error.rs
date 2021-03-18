@@ -7,10 +7,6 @@ use thiserror::Error;
 /// # Error variants
 #[derive(Debug, Error)]
 pub enum Error {
-    /// Configuration error.
-    #[error("Configuration error")]
-    Configuration(#[from] Configuration),
-
     /// HTTP error.
     #[error("HTTP error")]
     Http(#[from] http::Error),
@@ -37,12 +33,3 @@ pub enum Error {
 }
 
 impl ErrorIter for Error {}
-
-/// Configuration error variants.
-#[derive(Debug, Error, Clone, Copy)]
-pub enum Configuration {
-    /// Returned when the call involving the secret key was issued, but the
-    /// secret key was not configured.
-    #[error("Secret key is unavailable")]
-    SecretKeyUnavailable,
-}

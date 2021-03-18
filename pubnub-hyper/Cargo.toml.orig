@@ -1,0 +1,45 @@
+[package]
+name = "pubnub-hyper"
+version = "0.1.0"
+description = "PubNub async crate based on Tokio and Hyper"
+repository = "https://github.com/pubnub/rust"
+homepage = "https://www.pubnub.com/"
+keywords = ["pubnub", "publish-subscribe", "subscribe"]
+categories = ["network-programming"]
+authors = ["Stephen Blum <stephen@pubnub.com>", "Jay Oster <jay@pubnub.com>"]
+edition = "2018"
+readme = "../README.md"
+license-file = "../LICENSE"
+
+[dependencies]
+pubnub-core = { version = "=0.1.0", path = "../pubnub-core" }
+pubnub-util = { version = "=0.1.0", path = "../pubnub-util" }
+async-trait = "0.1"
+derive_builder = "0.9"
+error-iter = "0.2"
+futures-util = { version = "0.3", features = ["async-await", "async-await-macro"] }
+getset = "0.1"
+http = "0.2"
+hyper = { version = "0.13.3", features = ["stream"] }
+hyper-tls = "0.4"
+log = "0.4"
+percent-encoding = "2.1"
+thiserror = "1.0"
+tokio = "0.2"
+
+[dev-dependencies]
+byteorder = "1.3"
+env_logger = "0.7"
+futures-channel = "0.3"
+futures-executor = "0.3"
+getrandom = "0.1"
+http = "0.2"
+json = "0.12"
+log = "0.4"
+percent-encoding = "2.1"
+randomize = "3.0"
+tokio = { version = "0.2", features = ["macros"] }
+
+[badges]
+travis-ci = { repository = "pubnub/rust", branch = "master" }
+maintenance = { status = "actively-developed" }
