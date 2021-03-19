@@ -9,11 +9,15 @@ use hyper_tls::HttpsConnector;
 use std::time::Duration;
 
 pub mod error;
+pub mod history;
+pub mod pam;
 pub mod presence;
 pub mod pubsub;
 
+mod shared_parsers;
+
 #[macro_use]
-mod util;
+pub(crate) mod util;
 
 type HttpClient = Client<HttpsConnector<HttpConnector>>;
 
@@ -32,6 +36,9 @@ pub struct Hyper {
     /// Publish key to use in requests.
     #[builder(setter(into))]
     publish_key: String,
+    /// Secret key matching the subscribe key.
+    #[builder(setter(into, strip_option), default = "None")]
+    secret_key: Option<String>,
 
     /// The authority URL part to use to connet to the PubNub edge network
     #[builder(setter(into), default = "\"ps.pndsn.com\".to_owned()")]
@@ -43,12 +50,6 @@ pub struct Hyper {
     /// A UUID to identify as.
     #[builder(setter(into), default = "Self::default_uuid()")]
     uuid: UUID,
-
-    #[builder(setter(into))]
-    auth_key: String,
-
-    #[builder(setter(into))]
-    pnsdk: String,
 }
 
 impl Hyper {
