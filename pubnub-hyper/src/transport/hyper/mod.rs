@@ -50,6 +50,10 @@ pub struct Hyper {
     /// A UUID to identify as.
     #[builder(setter(into), default = "Self::default_uuid()")]
     uuid: UUID,
+
+    /// SDK ID to look like native web client.
+    #[builder(setter(into))]
+    pnsdk: String,
 }
 
 impl Hyper {
